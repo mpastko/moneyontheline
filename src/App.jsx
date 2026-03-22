@@ -87,7 +87,7 @@ async function apiMint(team) {
     await fetch('/api/mint', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ team })
+      body: JSON.stringify({ team, amount: TOKENS_PER_MINT })
     });
   } catch (e) {
     console.error("Mint failed:", e);
@@ -483,9 +483,9 @@ function HomeScreen({ onStart, onLeaderboard, onAdmin, gameData, getTeamScore })
   const teamScores = TEAMS.map(t => ({ team: t, ...getTeamScore(t) }))
     .filter(t => t.tokens > 0)
     .sort((a, b) => b.score - a.score)
-    .slice(0, 4);
+    .slice(0, 8);
   
-  const topPlayers = (gameData.playerLeaderboard || []).slice(0, 5);
+  const topPlayers = (gameData.playerLeaderboard || []).slice(0, 10);
   const [showTeams, setShowTeams] = useState(true);
   const [showAdminInput, setShowAdminInput] = useState(false);
   const [adminPw, setAdminPw] = useState("");
@@ -566,7 +566,7 @@ function HomeScreen({ onStart, onLeaderboard, onAdmin, gameData, getTeamScore })
               marginBottom: 14,
               fontSize: 12,
             }}>
-              <span style={{ fontWeight: "bold" }}>{t.team}</span>
+              <span style={{ fontWeight: "bold" }}>{i + 1}. {t.team}</span>
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontWeight: "bold" }}>${t.score.toLocaleString()}</div>
                 <div style={{ fontSize: 7, color: GB_MID, marginTop: 2 }}>
