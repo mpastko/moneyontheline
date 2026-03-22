@@ -718,12 +718,15 @@ function GameplayScreen({ team, onComplete }) {
   const [gameActive, setGameActive] = useState(true);
   const [shotLocation, setShotLocation] = useState(null); // { x, y, made }
   const [canShoot, setCanShoot] = useState(true);
+  const canShootRef = useRef(true);
   const [showTapHint, setShowTapHint] = useState(true);
 
   const animFrameRef = useRef(null);
   const timerRef = useRef(null);
+  const gameActiveRef = useRef(true);
   const madeRef = useRef(0);
   const attemptedRef = useRef(0);
+  const gameAreaRef = useRef(null);
 
   // Elliptical orbit state - all in a ref for animation frame access
   const orbitRef = useRef({
@@ -814,6 +817,7 @@ function GameplayScreen({ team, onComplete }) {
     timerRef.current = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
+          gameActiveRef.current = false;
           setGameActive(false);
           clearInterval(timerRef.current);
           return 0;
@@ -833,14 +837,23 @@ function GameplayScreen({ team, onComplete }) {
     }
   }, [timeLeft, gameActive]);
 
+  // Use refs for cursor position so shoot always reads the latest value
+  const cursorXRef = useRef(250);
+  const cursorYRef = useRef(110);
+  
+  // Keep cursor refs in sync
+  useEffect(() => { cursorXRef.current = cursorX; }, [cursorX]);
+  useEffect(() => { cursorYRef.current = cursorY; }, [cursorY]);
+
   const shoot = useCallback(() => {
-    if (!gameActive || !canShoot) return;
+    if (!gameActiveRef.current || !canShootRef.current) return;
     setShowTapHint(false);
+    canShootRef.current = false;
     setCanShoot(false);
 
-    // Capture cursor position at moment of tap
-    const sx = cursorX;
-    const sy = cursorY;
+    // Capture cursor position at moment of tap via refs (always current)
+    const sx = cursorXRef.current;
+    const sy = cursorYRef.current;
     
     // Calculate distance from the target center (center of square above rim)
     const dx = sx - TARGET_X;
@@ -860,9 +873,24 @@ function GameplayScreen({ team, onComplete }) {
     
     setTimeout(() => {
       setShotLocation(null);
+      canShootRef.current = true;
       setCanShoot(true);
     }, 1000);
-  }, [gameActive, canShoot, cursorX, cursorY]);
+  }, []); // No dependencies — reads everything from refs
+
+  // Touch event handler — fires on first finger contact, no delay
+  const handleTouchStart = useCallback((e) => {
+    e.preventDefault(); // Prevent click from also firing & prevent scroll/zoom
+    shoot();
+  }, [shoot]);
+
+  // Attach touch listener via ref to use { passive: false } (React synthetic events are passive)
+  useEffect(() => {
+    const el = gameAreaRef.current;
+    if (!el) return;
+    el.addEventListener('touchstart', handleTouchStart, { passive: false });
+    return () => el.removeEventListener('touchstart', handleTouchStart);
+  }, [handleTouchStart]);
 
   return (
     <div style={{ width: "100%", maxWidth: 420, textAlign: "center", userSelect: "none" }}>
@@ -896,8 +924,9 @@ function GameplayScreen({ team, onComplete }) {
         </div>
       </div>
       
-      {/* Game area - tap anywhere to shoot */}
+      {/* Game area - tap/click to shoot */}
       <div
+        ref={gameAreaRef}
         onClick={shoot}
         style={{
           width: "100%",
@@ -905,15 +934,20 @@ function GameplayScreen({ team, onComplete }) {
           border: `3px solid ${GB_DARK}`,
           margin: "0 auto",
           cursor: "pointer",
-          touchAction: "manipulation",
+          touchAction: "none",
+          WebkitTouchCallout: "none",
+          WebkitUserSelect: "none",
+          userSelect: "none",
         }}
       >
-        <BackboardSVG
-          cursorX={cursorX}
-          cursorY={cursorY}
-          showCursor={gameActive}
-          shotLocation={shotLocation}
-        />
+        <div style={{ pointerEvents: "none", width: "100%", height: "100%" }}>
+          <BackboardSVG
+            cursorX={cursorX}
+            cursorY={cursorY}
+            showCursor={gameActive}
+            shotLocation={shotLocation}
+          />
+        </div>
       </div>
       
       {showTapHint && gameActive && (
