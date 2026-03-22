@@ -69,33 +69,69 @@ function getComment(made, attempted) {
 }
 
 // ============================================================
-// STORAGE HELPERS (localStorage for standalone deployment)
+// API HELPERS (Railway PostgreSQL backend)
 // ============================================================
-const STORAGE_KEY = "motl-game-data";
-
-async function loadGameData() {
+async function fetchGameData() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
+    const res = await fetch('/api/gamedata');
+    if (!res.ok) throw new Error('Failed to fetch');
+    return await res.json();
+  } catch (e) {
+    console.error("Fetch game data failed:", e);
     return null;
   }
 }
 
-async function saveGameData(data) {
+async function apiMint(team) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    await fetch('/api/mint', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ team })
+    });
   } catch (e) {
-    console.error("Save failed:", e);
+    console.error("Mint failed:", e);
+  }
+}
+
+async function apiRecordRound(team, made, attempted) {
+  try {
+    await fetch('/api/round', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ team, made, attempted })
+    });
+  } catch (e) {
+    console.error("Record round failed:", e);
+  }
+}
+
+async function apiAddLeaderboard(name, score, team) {
+  try {
+    await fetch('/api/leaderboard', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, score, team })
+    });
+  } catch (e) {
+    console.error("Add leaderboard failed:", e);
+  }
+}
+
+async function apiReset() {
+  try {
+    await fetch('/api/reset', { method: 'POST' });
+  } catch (e) {
+    console.error("Reset failed:", e);
   }
 }
 
 function defaultGameData() {
   return {
-    teamTokens: {},       // { "$PUR": 128, ... }
-    teamFTMade: {},       // { "$PUR": 50, ... }
-    teamFTAttempted: {},  // { "$PUR": 70, ... }
-    playerLeaderboard: [] // [{ name: "MICKEY", score: 28, team: "$PUR" }, ...]
+    teamTokens: {},
+    teamFTMade: {},
+    teamFTAttempted: {},
+    playerLeaderboard: []
   };
 }
 
@@ -303,59 +339,42 @@ export default function MoneyOnTheLine() {
   // Load data on mount
   useEffect(() => {
     (async () => {
-      const data = await loadGameData();
+      const data = await fetchGameData();
       if (data) setGameData(data);
       setDataLoaded(true);
     })();
   }, []);
 
-  // Save whenever gameData changes
-  useEffect(() => {
-    if (dataLoaded) saveGameData(gameData);
-  }, [gameData, dataLoaded]);
+  // Refresh data from server (called after mutations)
+  const refreshData = async () => {
+    const data = await fetchGameData();
+    if (data) setGameData(data);
+  };
 
-  const handleTeamSelected = (team) => {
+  const handleTeamSelected = async (team) => {
     setSelectedTeam(team);
-    // Mint 64 tokens
-    setGameData(prev => ({
-      ...prev,
-      teamTokens: {
-        ...prev.teamTokens,
-        [team]: (prev.teamTokens[team] || 0) + TOKENS_PER_MINT
-      }
-    }));
+    await apiMint(team);
+    await refreshData();
     setScreen(SCREENS.GAMEPLAY);
   };
 
-  const handleRoundComplete = (made, attempted) => {
+  const handleRoundComplete = async (made, attempted) => {
     const team = selectedTeam;
-    setGameData(prev => ({
-      ...prev,
-      teamFTMade: {
-        ...prev.teamFTMade,
-        [team]: (prev.teamFTMade[team] || 0) + made
-      },
-      teamFTAttempted: {
-        ...prev.teamFTAttempted,
-        [team]: (prev.teamFTAttempted[team] || 0) + attempted
-      }
-    }));
+    await apiRecordRound(team, made, attempted);
+    await refreshData();
     setRoundResult({ made, attempted, team });
     setScreen(SCREENS.ROUND_RESULT);
   };
 
-  const handleLeaderboardEntry = (name, score) => {
-    setGameData(prev => {
-      const lb = [...prev.playerLeaderboard, { name, score, team: selectedTeam }];
-      lb.sort((a, b) => b.score - a.score);
-      return { ...prev, playerLeaderboard: lb.slice(0, LEADERBOARD_SIZE) };
-    });
+  const handleLeaderboardEntry = async (name, score) => {
+    await apiAddLeaderboard(name, score, selectedTeam);
+    await refreshData();
   };
 
-  const handleResetAll = () => {
-    const fresh = defaultGameData();
-    setGameData(fresh);
-    saveGameData(fresh);
+  const handleResetAll = async () => {
+    await apiReset();
+    setGameData(defaultGameData());
+    await refreshData();
   };
 
   const getTeamScore = (team) => {
