@@ -956,7 +956,7 @@ function GameplayScreen({ team, onComplete }) {
           marginTop: 16,
           animation: "blink 1s step-end infinite",
         }}>
-          Tap to shoot!
+          Tap above to shoot!
         </div>
       )}
       
@@ -966,7 +966,7 @@ function GameplayScreen({ team, onComplete }) {
         </div>
       )}
       
-      <div style={{ fontSize: 9, color: GB_MID, marginTop: 8 }}>
+      <div style={{ fontSize: 12, color: GB_MID, marginTop: 8 }}>
         {made}/{attempted} FT
       </div>
     </div>
