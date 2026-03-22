@@ -149,63 +149,25 @@ const pixelFont = `'Press Start 2P', monospace`;
 // SVG COMPONENTS (Game Boy style pixel art)
 // ============================================================
 function BackboardSVG({ cursorX, cursorY, showCursor, shotLocation }) {
-  // Backboard area is the "court view" region
-  const bx = 170, by = 70; // backboard position
-  const bw = 160, bh = 100; // backboard size
-  const rimX = 250, rimY = 145; // rim center
-  const rimW = 60;
-
   return (
     <svg viewBox="0 0 500 500" style={{ width: "100%", height: "100%", display: "block" }}>
       {/* Background - court wall */}
       <rect x="0" y="0" width="500" height="500" fill={GB_BG} />
       
-      {/* Backboard border */}
-      <rect x={bx-5} y={by-5} width={bw+10} height={bh+10} fill="none" stroke={GB_DARK} strokeWidth="4" />
-      <rect x={bx} y={by} width={bw} height={bh} fill={GB_BG} stroke={GB_DARK} strokeWidth="3" />
-      
-      {/* Square on backboard (the target zone) */}
-      <rect x={rimX-25} y={by+15} width={50} height={40} fill="none" stroke={GB_DARK} strokeWidth="4" />
-      
-      {/* Rim */}
-      <line x1={rimX-rimW/2} y1={rimY} x2={rimX+rimW/2} y2={rimY} stroke={GB_DARK} strokeWidth="4" />
-      <line x1={rimX-rimW/2} y1={rimY} x2={rimX-rimW/2} y2={rimY+2} stroke={GB_DARK} strokeWidth="4" />
-      <line x1={rimX+rimW/2} y1={rimY} x2={rimX+rimW/2} y2={rimY+2} stroke={GB_DARK} strokeWidth="4" />
-      
-      {/* Net - checkerboard pattern */}
-      {[0,1,2,3,4,5].map(row => (
-        <g key={row}>
-          {[0,1,2,3,4].map(col => {
-            const netTop = rimY + 2;
-            const spread = row * 1.5;
-            const x = rimX - 25 + spread/2 + col * ((50 - spread) / 5);
-            const y = netTop + row * 12;
-            return (row + col) % 2 === 0 ? (
-              <rect key={col} x={x} y={y} width={8} height={10} fill={GB_MID} opacity="0.5" />
-            ) : null;
-          })}
-        </g>
-      ))}
-      
-      {/* Shooter body - over the shoulder view */}
-      <ellipse cx={250} cy={340} rx={45} ry={50} fill={GB_MID} />
-      <ellipse cx={160} cy={430} rx={80} ry={70} fill="#888" />
-      <ellipse cx={340} cy={430} rx={80} ry={70} fill="#888" />
-      <rect x={225} y={370} width={50} height={30} fill={GB_MID} rx="5" />
-      <line x1={200} y1={410} x2={200} y2={480} stroke={GB_DARK} strokeWidth="2" opacity="0.3" />
-      <line x1={300} y1={410} x2={300} y2={480} stroke={GB_DARK} strokeWidth="2" opacity="0.3" />
-      <path d="M 170 400 Q 120 350 140 300 Q 145 285 160 290" fill="none" stroke={GB_DARK} strokeWidth="6" />
-      <path d="M 310 400 Q 340 340 320 280 Q 310 260 300 270" fill="none" stroke={GB_DARK} strokeWidth="6" />
-      <circle cx={155} cy={288} r={10} fill={GB_MID} />
-      <circle cx={298} cy={268} r={10} fill={GB_MID} />
+      {/* Raster graphic — backboard, rim, net, and shooter */}
+      <image
+        href="/main-graphic.png"
+        x="0" y="0"
+        width="500" height="500"
+        preserveAspectRatio="xMidYMid meet"
+        style={{ imageRendering: "pixelated" }}
+      />
       
       {/* Shot location marker - shows where the player tapped */}
       {shotLocation && (
         <g transform={`translate(${shotLocation.x}, ${shotLocation.y})`}>
-          {/* X marker for shot location */}
           <line x1="-10" y1="-10" x2="10" y2="10" stroke={GB_DARK} strokeWidth="3" />
           <line x1="10" y1="-10" x2="-10" y2="10" stroke={GB_DARK} strokeWidth="3" />
-          {/* Made/missed label */}
           <text
             x="0" y="22"
             textAnchor="middle"
@@ -233,33 +195,15 @@ function BackboardSVG({ cursorX, cursorY, showCursor, shotLocation }) {
 
 function HomeSVG() {
   return (
-    <svg viewBox="0 0 400 350" style={{ width: "70%", maxWidth: 280, display: "block", margin: "0 auto" }}>
-      {/* Backboard */}
-      <rect x="80" y="20" width="240" height="150" fill="none" stroke={GB_DARK} strokeWidth="4" />
-      <rect x="85" y="25" width="230" height="140" fill={GB_BG} stroke={GB_DARK} strokeWidth="2" />
-      {/* Square */}
-      <rect x="165" y="55" width="70" height="55" fill="none" stroke={GB_DARK} strokeWidth="4" />
-      {/* Rim */}
-      <line x1="165" y1="145" x2="235" y2="145" stroke={GB_DARK} strokeWidth="4" />
-      {/* Net hint */}
-      {[0,1,2,3].map(row => (
-        <g key={row}>
-          {[0,1,2].map(col => (
-            (row + col) % 2 === 0 ? (
-              <rect key={col} x={175 + col * 18} y={148 + row * 14} width={10} height={12} fill={GB_MID} opacity="0.4" />
-            ) : null
-          ))}
-        </g>
-      ))}
-      {/* Shooter head */}
-      <ellipse cx="200" cy="250" rx="35" ry="40" fill={GB_MID} />
-      {/* Body/shoulders */}
-      <ellipse cx="140" cy="320" rx="65" ry="50" fill="#888" />
-      <ellipse cx="260" cy="320" rx="65" ry="50" fill="#888" />
-      <rect x="175" y="275" width="50" height="25" fill={GB_MID} rx="5" />
-      {/* Arms */}
-      <path d="M 140 310 Q 100 260 115 220" fill="none" stroke={GB_DARK} strokeWidth="5" />
-      <path d="M 250 310 Q 270 255 255 215" fill="none" stroke={GB_DARK} strokeWidth="5" />
+    <svg viewBox="0 0 400 400" style={{ width: "70%", maxWidth: 280, display: "block", margin: "0 auto" }}>
+      <rect x="0" y="0" width="400" height="400" fill={GB_BG} />
+      <image
+        href="/main-graphic.png"
+        x="0" y="0"
+        width="400" height="400"
+        preserveAspectRatio="xMidYMid meet"
+        style={{ imageRendering: "pixelated" }}
+      />
     </svg>
   );
 }
@@ -714,19 +658,16 @@ function GameplayScreen({ team, onComplete }) {
   const [made, setMade] = useState(0);
   const [attempted, setAttempted] = useState(0);
   const [cursorX, setCursorX] = useState(250);
-  const [cursorY, setCursorY] = useState(110);
+  const [cursorY, setCursorY] = useState(115);
   const [gameActive, setGameActive] = useState(true);
   const [shotLocation, setShotLocation] = useState(null); // { x, y, made }
   const [canShoot, setCanShoot] = useState(true);
-  const canShootRef = useRef(true);
   const [showTapHint, setShowTapHint] = useState(true);
 
   const animFrameRef = useRef(null);
   const timerRef = useRef(null);
-  const gameActiveRef = useRef(true);
   const madeRef = useRef(0);
   const attemptedRef = useRef(0);
-  const gameAreaRef = useRef(null);
 
   // Elliptical orbit state - all in a ref for animation frame access
   const orbitRef = useRef({
@@ -734,7 +675,7 @@ function GameplayScreen({ team, onComplete }) {
     angle: Math.random() * Math.PI * 2,
     // Ellipse center orbits around the backboard center
     centerX: 250,
-    centerY: 110,
+    centerY: 115,
     // Semi-major and semi-minor axes (these shift over time)
     radiusA: 70,  // horizontal radius
     radiusB: 35,  // vertical radius
@@ -752,11 +693,11 @@ function GameplayScreen({ team, onComplete }) {
     axisSpeed: 0.004,
   });
 
-  // The "sweet spot" — center of the square above the rim
-  // Square is at x=225..275, y=85..125 → center at (250, 105)
+  // The "sweet spot" — center of the inner square on the raster backboard
+  // Raster inner square maps to approx (250, 115) in the 500x500 viewBox
   const TARGET_X = 250;
-  const TARGET_Y = 105;
-  const HIT_RADIUS = 24; // distance from target center to count as made
+  const TARGET_Y = 115;
+  const HIT_RADIUS = 29; // distance from target center to count as made
 
   // Elliptical cursor movement loop
   useEffect(() => {
@@ -772,7 +713,7 @@ function GameplayScreen({ team, onComplete }) {
       // Slowly drift the ellipse center around the backboard area
       o.driftAngle += o.driftSpeed;
       o.centerX = 250 + Math.cos(o.driftAngle) * 30;
-      o.centerY = 110 + Math.sin(o.driftAngle * 0.7) * 20;
+      o.centerY = 115 + Math.sin(o.driftAngle * 0.7) * 22;
       
       // Slowly shift the semi-axes so the ellipse "breathes"
       o.axisPhase += o.axisSpeed;
@@ -797,9 +738,9 @@ function GameplayScreen({ team, onComplete }) {
       let fx = o.centerX + rx;
       let fy = o.centerY + ry;
       
-      // Soft clamp to stay within the backboard area (roughly 140..360, 50..170)
-      fx = Math.max(140, Math.min(360, fx));
-      fy = Math.max(50, Math.min(170, fy));
+      // Soft clamp to stay within the backboard area
+      fx = Math.max(120, Math.min(380, fx));
+      fy = Math.max(23, Math.min(163, fy));
       
       setCursorX(fx);
       setCursorY(fy);
@@ -817,7 +758,6 @@ function GameplayScreen({ team, onComplete }) {
     timerRef.current = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
-          gameActiveRef.current = false;
           setGameActive(false);
           clearInterval(timerRef.current);
           return 0;
@@ -837,23 +777,14 @@ function GameplayScreen({ team, onComplete }) {
     }
   }, [timeLeft, gameActive]);
 
-  // Use refs for cursor position so shoot always reads the latest value
-  const cursorXRef = useRef(250);
-  const cursorYRef = useRef(110);
-  
-  // Keep cursor refs in sync
-  useEffect(() => { cursorXRef.current = cursorX; }, [cursorX]);
-  useEffect(() => { cursorYRef.current = cursorY; }, [cursorY]);
-
   const shoot = useCallback(() => {
-    if (!gameActiveRef.current || !canShootRef.current) return;
+    if (!gameActive || !canShoot) return;
     setShowTapHint(false);
-    canShootRef.current = false;
     setCanShoot(false);
 
-    // Capture cursor position at moment of tap via refs (always current)
-    const sx = cursorXRef.current;
-    const sy = cursorYRef.current;
+    // Capture cursor position at moment of tap
+    const sx = cursorX;
+    const sy = cursorY;
     
     // Calculate distance from the target center (center of square above rim)
     const dx = sx - TARGET_X;
@@ -873,24 +804,9 @@ function GameplayScreen({ team, onComplete }) {
     
     setTimeout(() => {
       setShotLocation(null);
-      canShootRef.current = true;
       setCanShoot(true);
     }, 1000);
-  }, []); // No dependencies — reads everything from refs
-
-  // Touch event handler — fires on first finger contact, no delay
-  const handleTouchStart = useCallback((e) => {
-    e.preventDefault(); // Prevent click from also firing & prevent scroll/zoom
-    shoot();
-  }, [shoot]);
-
-  // Attach touch listener via ref to use { passive: false } (React synthetic events are passive)
-  useEffect(() => {
-    const el = gameAreaRef.current;
-    if (!el) return;
-    el.addEventListener('touchstart', handleTouchStart, { passive: false });
-    return () => el.removeEventListener('touchstart', handleTouchStart);
-  }, [handleTouchStart]);
+  }, [gameActive, canShoot, cursorX, cursorY]);
 
   return (
     <div style={{ width: "100%", maxWidth: 420, textAlign: "center", userSelect: "none" }}>
@@ -924,9 +840,8 @@ function GameplayScreen({ team, onComplete }) {
         </div>
       </div>
       
-      {/* Game area - tap/click to shoot */}
+      {/* Game area - tap anywhere to shoot */}
       <div
-        ref={gameAreaRef}
         onClick={shoot}
         style={{
           width: "100%",
@@ -934,20 +849,15 @@ function GameplayScreen({ team, onComplete }) {
           border: `3px solid ${GB_DARK}`,
           margin: "0 auto",
           cursor: "pointer",
-          touchAction: "none",
-          WebkitTouchCallout: "none",
-          WebkitUserSelect: "none",
-          userSelect: "none",
+          touchAction: "manipulation",
         }}
       >
-        <div style={{ pointerEvents: "none", width: "100%", height: "100%" }}>
-          <BackboardSVG
-            cursorX={cursorX}
-            cursorY={cursorY}
-            showCursor={gameActive}
-            shotLocation={shotLocation}
-          />
-        </div>
+        <BackboardSVG
+          cursorX={cursorX}
+          cursorY={cursorY}
+          showCursor={gameActive}
+          shotLocation={shotLocation}
+        />
       </div>
       
       {showTapHint && gameActive && (
@@ -956,7 +866,7 @@ function GameplayScreen({ team, onComplete }) {
           marginTop: 16,
           animation: "blink 1s step-end infinite",
         }}>
-          Tap above to shoot!
+          Tap to shoot!
         </div>
       )}
       
@@ -966,7 +876,7 @@ function GameplayScreen({ team, onComplete }) {
         </div>
       )}
       
-      <div style={{ fontSize: 12, color: GB_MID, marginTop: 8 }}>
+      <div style={{ fontSize: 9, color: GB_MID, marginTop: 8 }}>
         {made}/{attempted} FT
       </div>
     </div>
