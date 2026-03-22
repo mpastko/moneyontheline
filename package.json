@@ -1,15 +1,16 @@
 {
   "name": "moneyontheline",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "start": "vite preview --host 0.0.0.0 --port ${PORT:-3000}"
+    "start": "node server/index.js"
   },
   "dependencies": {
+    "express": "^4.21.1",
+    "pg": "^8.13.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

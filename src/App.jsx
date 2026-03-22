@@ -69,26 +69,58 @@ function getComment(made, attempted) {
 }
 
 // ============================================================
-// STORAGE HELPERS (localStorage for standalone deployment)
+// API HELPERS (global state via server)
 // ============================================================
-const STORAGE_KEY = "motl-game-data";
-
 async function loadGameData() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
+    const res = await fetch('/api/gamedata');
+    if (!res.ok) throw new Error('fetch failed');
+    return await res.json();
+  } catch (e) {
+    console.error("Load failed:", e);
     return null;
   }
 }
 
-async function saveGameData(data) {
+async function apiMintTokens(team, amount) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch (e) {
-    console.error("Save failed:", e);
-  }
+    await fetch('/api/mint', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ team, amount }),
+    });
+  } catch (e) { console.error("Mint failed:", e); }
 }
+
+async function apiRecordRound(team, made, attempted) {
+  try {
+    await fetch('/api/round', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ team, made, attempted }),
+    });
+  } catch (e) { console.error("Record round failed:", e); }
+}
+
+async function apiAddLeaderboardEntry(name, score, team) {
+  try {
+    const res = await fetch('/api/leaderboard', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, score, team }),
+    });
+    return await res.json();
+  } catch (e) { console.error("Leaderboard entry failed:", e); return { success: false }; }
+}
+
+async function apiResetAll() {
+  try {
+    await fetch('/api/reset', { method: 'POST' });
+  } catch (e) { console.error("Reset failed:", e); }
+}
+
+// saveGameData is a no-op — each action hits the API directly
+async function saveGameData() {}
 
 function defaultGameData() {
   return {
@@ -297,14 +329,22 @@ export default function MoneyOnTheLine() {
     })();
   }, []);
 
-  // Save whenever gameData changes
+  // Helper: refresh global data from server
+  const refreshGameData = async () => {
+    const data = await loadGameData();
+    if (data) setGameData(data);
+  };
+
+  // Save whenever gameData changes — no-op now, API handles persistence
   useEffect(() => {
     if (dataLoaded) saveGameData(gameData);
   }, [gameData, dataLoaded]);
 
-  const handleTeamSelected = (team) => {
+  const handleTeamSelected = async (team) => {
     setSelectedTeam(team);
-    // Mint 64 tokens
+    // Mint 64 tokens on server
+    await apiMintTokens(team, TOKENS_PER_MINT);
+    // Update local state optimistically
     setGameData(prev => ({
       ...prev,
       teamTokens: {
@@ -315,8 +355,11 @@ export default function MoneyOnTheLine() {
     setScreen(SCREENS.GAMEPLAY);
   };
 
-  const handleRoundComplete = (made, attempted) => {
+  const handleRoundComplete = async (made, attempted) => {
     const team = selectedTeam;
+    // Record round on server
+    await apiRecordRound(team, made, attempted);
+    // Update local state optimistically
     setGameData(prev => ({
       ...prev,
       teamFTMade: {
@@ -332,18 +375,16 @@ export default function MoneyOnTheLine() {
     setScreen(SCREENS.ROUND_RESULT);
   };
 
-  const handleLeaderboardEntry = (name, score) => {
-    setGameData(prev => {
-      const lb = [...prev.playerLeaderboard, { name, score, team: selectedTeam }];
-      lb.sort((a, b) => b.score - a.score);
-      return { ...prev, playerLeaderboard: lb.slice(0, LEADERBOARD_SIZE) };
-    });
+  const handleLeaderboardEntry = async (name, score) => {
+    await apiAddLeaderboardEntry(name, score, selectedTeam);
+    // Refresh to get the true global leaderboard
+    await refreshGameData();
   };
 
-  const handleResetAll = () => {
+  const handleResetAll = async () => {
+    await apiResetAll();
     const fresh = defaultGameData();
     setGameData(fresh);
-    saveGameData(fresh);
   };
 
   const getTeamScore = (team) => {
@@ -394,7 +435,7 @@ export default function MoneyOnTheLine() {
       {screen === SCREENS.HOME && (
         <HomeScreen
           onStart={() => setScreen(SCREENS.TEAM_SELECT)}
-          onLeaderboard={(tab) => { setLeaderboardTab(tab); setScreen(SCREENS.LEADERBOARD); }}
+          onLeaderboard={(tab) => { refreshGameData(); setLeaderboardTab(tab); setScreen(SCREENS.LEADERBOARD); }}
           onAdmin={() => setScreen(SCREENS.ADMIN)}
           gameData={gameData}
           getTeamScore={getTeamScore}
@@ -403,7 +444,7 @@ export default function MoneyOnTheLine() {
       {screen === SCREENS.TEAM_SELECT && (
         <TeamSelectScreen
           onSelect={handleTeamSelected}
-          onBack={() => setScreen(SCREENS.HOME)}
+          onBack={() => { refreshGameData(); setScreen(SCREENS.HOME); }}
         />
       )}
       {screen === SCREENS.GAMEPLAY && (
@@ -417,6 +458,7 @@ export default function MoneyOnTheLine() {
           result={roundResult}
           teamScore={getTeamScore(roundResult.team)}
           onNext={() => {
+            refreshGameData();
             setLeaderboardTab("players");
             setScreen(SCREENS.LEADERBOARD);
           }}
@@ -430,7 +472,7 @@ export default function MoneyOnTheLine() {
           getTeamScore={getTeamScore}
           tab={leaderboardTab}
           onTabChange={setLeaderboardTab}
-          onHome={() => setScreen(SCREENS.HOME)}
+          onHome={() => { refreshGameData(); setScreen(SCREENS.HOME); }}
         />
       )}
       {screen === SCREENS.ADMIN && (
