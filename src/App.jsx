@@ -150,7 +150,7 @@ const pixelFont = `'Press Start 2P', monospace`;
 // ============================================================
 function BackboardSVG({ cursorX, cursorY, showCursor, shotLocation }) {
   return (
-    <svg viewBox="0 0 500 500" style={{ width: "100%", height: "100%", display: "block" }}>
+    <svg viewBox="0 0 500 500" style={{ width: "100%", height: "100%", display: "block", pointerEvents: "none" }}>
       {/* Background - court wall */}
       <rect x="0" y="0" width="500" height="500" fill={GB_BG} />
       
@@ -160,7 +160,7 @@ function BackboardSVG({ cursorX, cursorY, showCursor, shotLocation }) {
         x="0" y="0"
         width="500" height="500"
         preserveAspectRatio="xMidYMid meet"
-        style={{ imageRendering: "pixelated" }}
+        style={{ imageRendering: "pixelated", pointerEvents: "none" }}
       />
       
       {/* Shot location marker - shows where the player tapped */}
