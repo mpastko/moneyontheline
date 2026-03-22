@@ -677,8 +677,8 @@ function GameplayScreen({ team, onComplete }) {
     centerX: 250,
     centerY: 115,
     // Semi-major and semi-minor axes (these shift over time)
-    radiusA: 70,  // horizontal radius
-    radiusB: 35,  // vertical radius
+    radiusA: 90,  // horizontal radius
+    radiusB: 48,  // vertical radius
     // Rotation of the ellipse itself
     tilt: 0,
     // Speed: radians per frame (~60fps)
@@ -694,9 +694,9 @@ function GameplayScreen({ team, onComplete }) {
   });
 
   // The "sweet spot" — center of the inner square on the raster backboard
-  // Raster inner square maps to approx (250, 115) in the 500x500 viewBox
+  // Shifted down 10px from graphic center for difficulty tuning
   const TARGET_X = 250;
-  const TARGET_Y = 115;
+  const TARGET_Y = 125;
   const HIT_RADIUS = 29; // distance from target center to count as made
 
   // Elliptical cursor movement loop
@@ -712,13 +712,13 @@ function GameplayScreen({ team, onComplete }) {
       
       // Slowly drift the ellipse center around the backboard area
       o.driftAngle += o.driftSpeed;
-      o.centerX = 250 + Math.cos(o.driftAngle) * 30;
-      o.centerY = 115 + Math.sin(o.driftAngle * 0.7) * 22;
+      o.centerX = 250 + Math.cos(o.driftAngle) * 40;
+      o.centerY = 115 + Math.sin(o.driftAngle * 0.7) * 28;
       
       // Slowly shift the semi-axes so the ellipse "breathes"
       o.axisPhase += o.axisSpeed;
-      o.radiusA = 55 + Math.sin(o.axisPhase) * 25;          // 30..80
-      o.radiusB = 28 + Math.cos(o.axisPhase * 1.3) * 15;    // 13..43
+      o.radiusA = 75 + Math.sin(o.axisPhase) * 35;          // 40..110
+      o.radiusB = 38 + Math.cos(o.axisPhase * 1.3) * 22;    // 16..60
       
       // Slowly rotate the ellipse tilt
       o.tiltDrift += o.tiltDriftSpeed;
@@ -739,8 +739,8 @@ function GameplayScreen({ team, onComplete }) {
       let fy = o.centerY + ry;
       
       // Soft clamp to stay within the backboard area
-      fx = Math.max(120, Math.min(380, fx));
-      fy = Math.max(23, Math.min(163, fy));
+      fx = Math.max(80, Math.min(420, fx));
+      fy = Math.max(10, Math.min(190, fy));
       
       setCursorX(fx);
       setCursorY(fy);
