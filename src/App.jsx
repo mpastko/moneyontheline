@@ -1134,7 +1134,7 @@ function LeaderboardScreen({ gameData, getTeamScore, tab, onTabChange, onHome })
               marginBottom: 14,
               fontSize: 11,
             }}>
-              <span style={{ fontWeight: "bold" }}>{t.team}</span>
+              <span style={{ fontWeight: "bold" }}>{i + 1}. {t.team}</span>
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontWeight: "bold" }}>${t.score.toLocaleString()}</div>
                 <div style={{ fontSize: 7, color: GB_MID, marginTop: 2 }}>
