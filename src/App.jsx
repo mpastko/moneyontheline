@@ -967,6 +967,12 @@ function RoundResultScreen({ result, teamScore, onNext, qualifies, onLeaderboard
     ? ((result.made / result.attempted) * 100).toFixed(1) + "%"
     : "0%";
 
+  const roundPct = result.attempted > 0 ? result.made / result.attempted : 0;
+  const roundTokens = Math.round(TOKENS_PER_MINT * roundPct);
+
+  // Disable continue link while name entry is active (qualifies but hasn't entered yet)
+  const continueDisabled = qualifies && !enteredName;
+
   return (
     <div style={{ width: "100%", maxWidth: 420, padding: "20px 16px", textAlign: "center" }}>
       <div style={{
@@ -980,15 +986,7 @@ function RoundResultScreen({ result, teamScore, onNext, qualifies, onLeaderboard
         ROUND OVER
       </div>
       
-      <div style={{ fontSize: 10, marginBottom: 6 }}>YOUR RESULT</div>
-      <div style={{ fontSize: 28, fontWeight: "bold", marginBottom: 4 }}>
-        {result.made}/{result.attempted}
-      </div>
-      <div style={{ fontSize: 10, color: GB_MID, marginBottom: 20 }}>
-        FREE THROWS • {pctStr}
-      </div>
-      
-      {/* Comment */}
+      {/* Comment - moved above result */}
       <div style={{
         border: `2px solid ${GB_DARK}`,
         padding: "12px",
@@ -1000,12 +998,20 @@ function RoundResultScreen({ result, teamScore, onNext, qualifies, onLeaderboard
         "{comment}"
       </div>
       
+      <div style={{ fontSize: 10, marginBottom: 6 }}>YOUR RESULT</div>
+      <div style={{ fontSize: 28, fontWeight: "bold", marginBottom: 4 }}>
+        {result.made}/{result.attempted}
+      </div>
+      <div style={{ fontSize: 10, color: GB_MID, marginBottom: 20 }}>
+        FREE THROWS • {pctStr}
+      </div>
+      
       {/* Team score */}
       <div style={{ fontSize: 9, color: GB_MID, marginBottom: 4 }}>TEAM SCORE</div>
       <div style={{ fontSize: 16, fontWeight: "bold", marginBottom: 4 }}>{result.team}</div>
-      <div style={{ fontSize: 20, fontWeight: "bold" }}>${teamScore.score.toLocaleString()}</div>
+      <div style={{ fontSize: 20, fontWeight: "bold", marginBottom: 4 }}>+ ${roundTokens.toLocaleString()}</div>
       <div style={{ fontSize: 7, color: GB_MID, marginBottom: 20 }}>
-        ${teamScore.tokens.toLocaleString()} team tokens × {(teamScore.pct * 100).toFixed(1)}% FT
+        $64 team tokens × {(roundPct * 100).toFixed(1)}% FT
       </div>
       
       {/* Leaderboard entry */}
@@ -1059,8 +1065,13 @@ function RoundResultScreen({ result, teamScore, onNext, qualifies, onLeaderboard
       )}
       
       <div
-        onClick={onNext}
-        style={{ fontSize: 12, cursor: "pointer", marginTop: 8 }}
+        onClick={continueDisabled ? undefined : onNext}
+        style={{
+          fontSize: 12,
+          cursor: continueDisabled ? "default" : "pointer",
+          marginTop: 8,
+          opacity: continueDisabled ? 0.3 : 1,
+        }}
       >
         <PixelTriangle size={7} /> CONTINUE TO LEADERBOARD
       </div>
