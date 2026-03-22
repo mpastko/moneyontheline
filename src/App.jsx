@@ -166,13 +166,19 @@ function BackboardSVG({ cursorX, cursorY, showCursor, shotLocation }) {
       {/* Shot location marker - shows where the player tapped */}
       {shotLocation && (
         <g transform={`translate(${shotLocation.x}, ${shotLocation.y})`}>
-          <line x1="-10" y1="-10" x2="10" y2="10" stroke={GB_DARK} strokeWidth="3" />
-          <line x1="10" y1="-10" x2="-10" y2="10" stroke={GB_DARK} strokeWidth="3" />
+          {shotLocation.made ? (
+            <circle cx="0" cy="0" r="12" fill="none" stroke={GB_DARK} strokeWidth="3" />
+          ) : (
+            <>
+              <line x1="-10" y1="-10" x2="10" y2="10" stroke={GB_DARK} strokeWidth="3" />
+              <line x1="10" y1="-10" x2="-10" y2="10" stroke={GB_DARK} strokeWidth="3" />
+            </>
+          )}
           <text
-            x="0" y="22"
+            x="0" y="28"
             textAnchor="middle"
             fontFamily={pixelFont}
-            fontSize="10"
+            fontSize="16"
             fill={GB_DARK}
           >
             {shotLocation.made ? "SWISH!" : "MISS"}
@@ -288,6 +294,11 @@ export default function MoneyOnTheLine() {
       setDataLoaded(true);
     })();
   }, []);
+
+  // Scroll to top on every screen change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [screen]);
 
   // Refresh data from server (called after mutations)
   const refreshData = async () => {
@@ -808,7 +819,7 @@ function GameplayScreen({ team, onComplete }) {
       // Randomize orbit parameters so cursor pattern changes between shots
       const o = orbitRef.current;
       o.angle = Math.random() * Math.PI * 2;
-      o.speed = 0.035 + Math.random() * 0.04; // 0.035..0.075 (was fixed 0.05)
+      o.speed = 0.035 + Math.random() * 0.0325; // 0.035..0.0675 (top speed reduced 10%)
       o.driftAngle = Math.random() * Math.PI * 2;
       o.driftSpeed = 0.002 + Math.random() * 0.004; // vary drift speed
       o.tiltDrift = Math.random() * Math.PI * 2;
