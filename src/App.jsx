@@ -167,22 +167,19 @@ function BackboardSVG({ cursorX, cursorY, showCursor, shotLocation }) {
       {shotLocation && (
         <g transform={`translate(${shotLocation.x}, ${shotLocation.y})`}>
           {shotLocation.made ? (
-            <circle cx="0" cy="0" r="12" fill="none" stroke={GB_DARK} strokeWidth="3" />
+            <text
+              x="0" y="6"
+              textAnchor="middle"
+              fontFamily={pixelFont}
+              fontSize="18"
+              fill={GB_DARK}
+            >+1</text>
           ) : (
             <>
               <line x1="-10" y1="-10" x2="10" y2="10" stroke={GB_DARK} strokeWidth="3" />
               <line x1="10" y1="-10" x2="-10" y2="10" stroke={GB_DARK} strokeWidth="3" />
             </>
           )}
-          <text
-            x="0" y="28"
-            textAnchor="middle"
-            fontFamily={pixelFont}
-            fontSize="16"
-            fill={GB_DARK}
-          >
-            {shotLocation.made ? "SWISH!" : "MISS"}
-          </text>
         </g>
       )}
       
@@ -889,7 +886,17 @@ function GameplayScreen({ team, onComplete }) {
           marginTop: 16,
           animation: "blink 1s step-end infinite",
         }}>
-          Tap to shoot!
+          Tap above to shoot!
+        </div>
+      )}
+      
+      {!showTapHint && gameActive && shotLocation && (
+        <div style={{
+          fontSize: 20,
+          marginTop: 16,
+          fontWeight: "bold",
+        }}>
+          {shotLocation.made ? "Swish!" : "Miss!"}
         </div>
       )}
       
