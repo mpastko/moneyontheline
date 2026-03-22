@@ -804,6 +804,18 @@ function GameplayScreen({ team, onComplete }) {
     
     setTimeout(() => {
       setShotLocation(null);
+      
+      // Randomize orbit parameters so cursor pattern changes between shots
+      const o = orbitRef.current;
+      o.angle = Math.random() * Math.PI * 2;
+      o.speed = 0.035 + Math.random() * 0.04; // 0.035..0.075 (was fixed 0.05)
+      o.driftAngle = Math.random() * Math.PI * 2;
+      o.driftSpeed = 0.002 + Math.random() * 0.004; // vary drift speed
+      o.tiltDrift = Math.random() * Math.PI * 2;
+      o.tiltDriftSpeed = 0.003 + Math.random() * 0.006;
+      o.axisPhase = Math.random() * Math.PI * 2;
+      o.axisSpeed = 0.003 + Math.random() * 0.004;
+      
       setCanShoot(true);
     }, 1000);
   }, [gameActive, canShoot, cursorX, cursorY]);
