@@ -69,58 +69,26 @@ function getComment(made, attempted) {
 }
 
 // ============================================================
-// API HELPERS (global state via server)
+// STORAGE HELPERS (localStorage for standalone deployment)
 // ============================================================
+const STORAGE_KEY = "motl-game-data";
+
 async function loadGameData() {
   try {
-    const res = await fetch('/api/gamedata');
-    if (!res.ok) throw new Error('fetch failed');
-    return await res.json();
-  } catch (e) {
-    console.error("Load failed:", e);
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
     return null;
   }
 }
 
-async function apiMintTokens(team, amount) {
+async function saveGameData(data) {
   try {
-    await fetch('/api/mint', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ team, amount }),
-    });
-  } catch (e) { console.error("Mint failed:", e); }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.error("Save failed:", e);
+  }
 }
-
-async function apiRecordRound(team, made, attempted) {
-  try {
-    await fetch('/api/round', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ team, made, attempted }),
-    });
-  } catch (e) { console.error("Record round failed:", e); }
-}
-
-async function apiAddLeaderboardEntry(name, score, team) {
-  try {
-    const res = await fetch('/api/leaderboard', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, score, team }),
-    });
-    return await res.json();
-  } catch (e) { console.error("Leaderboard entry failed:", e); return { success: false }; }
-}
-
-async function apiResetAll() {
-  try {
-    await fetch('/api/reset', { method: 'POST' });
-  } catch (e) { console.error("Reset failed:", e); }
-}
-
-// saveGameData is a no-op — each action hits the API directly
-async function saveGameData() {}
 
 function defaultGameData() {
   return {
@@ -260,9 +228,21 @@ function HomeSVG() {
   );
 }
 
-// ============================================================
-// SCREENS
-// ============================================================
+function PixelTriangle({ size = 14 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 8 8"
+      style={{ display: "inline-block", verticalAlign: "middle", marginRight: 6, imageRendering: "pixelated" }}
+    >
+      <rect x="0" y="0" width="2" height="8" fill="currentColor" />
+      <rect x="2" y="1" width="2" height="6" fill="currentColor" />
+      <rect x="4" y="2" width="2" height="4" fill="currentColor" />
+      <rect x="6" y="3" width="2" height="2" fill="currentColor" />
+    </svg>
+  );
+}
 const SCREENS = {
   HOME: "home",
   TEAM_SELECT: "team_select",
@@ -329,22 +309,14 @@ export default function MoneyOnTheLine() {
     })();
   }, []);
 
-  // Helper: refresh global data from server
-  const refreshGameData = async () => {
-    const data = await loadGameData();
-    if (data) setGameData(data);
-  };
-
-  // Save whenever gameData changes — no-op now, API handles persistence
+  // Save whenever gameData changes
   useEffect(() => {
     if (dataLoaded) saveGameData(gameData);
   }, [gameData, dataLoaded]);
 
-  const handleTeamSelected = async (team) => {
+  const handleTeamSelected = (team) => {
     setSelectedTeam(team);
-    // Mint 64 tokens on server
-    await apiMintTokens(team, TOKENS_PER_MINT);
-    // Update local state optimistically
+    // Mint 64 tokens
     setGameData(prev => ({
       ...prev,
       teamTokens: {
@@ -355,11 +327,8 @@ export default function MoneyOnTheLine() {
     setScreen(SCREENS.GAMEPLAY);
   };
 
-  const handleRoundComplete = async (made, attempted) => {
+  const handleRoundComplete = (made, attempted) => {
     const team = selectedTeam;
-    // Record round on server
-    await apiRecordRound(team, made, attempted);
-    // Update local state optimistically
     setGameData(prev => ({
       ...prev,
       teamFTMade: {
@@ -375,16 +344,18 @@ export default function MoneyOnTheLine() {
     setScreen(SCREENS.ROUND_RESULT);
   };
 
-  const handleLeaderboardEntry = async (name, score) => {
-    await apiAddLeaderboardEntry(name, score, selectedTeam);
-    // Refresh to get the true global leaderboard
-    await refreshGameData();
+  const handleLeaderboardEntry = (name, score) => {
+    setGameData(prev => {
+      const lb = [...prev.playerLeaderboard, { name, score, team: selectedTeam }];
+      lb.sort((a, b) => b.score - a.score);
+      return { ...prev, playerLeaderboard: lb.slice(0, LEADERBOARD_SIZE) };
+    });
   };
 
-  const handleResetAll = async () => {
-    await apiResetAll();
+  const handleResetAll = () => {
     const fresh = defaultGameData();
     setGameData(fresh);
+    saveGameData(fresh);
   };
 
   const getTeamScore = (team) => {
@@ -435,7 +406,7 @@ export default function MoneyOnTheLine() {
       {screen === SCREENS.HOME && (
         <HomeScreen
           onStart={() => setScreen(SCREENS.TEAM_SELECT)}
-          onLeaderboard={(tab) => { refreshGameData(); setLeaderboardTab(tab); setScreen(SCREENS.LEADERBOARD); }}
+          onLeaderboard={(tab) => { setLeaderboardTab(tab); setScreen(SCREENS.LEADERBOARD); }}
           onAdmin={() => setScreen(SCREENS.ADMIN)}
           gameData={gameData}
           getTeamScore={getTeamScore}
@@ -444,7 +415,7 @@ export default function MoneyOnTheLine() {
       {screen === SCREENS.TEAM_SELECT && (
         <TeamSelectScreen
           onSelect={handleTeamSelected}
-          onBack={() => { refreshGameData(); setScreen(SCREENS.HOME); }}
+          onBack={() => setScreen(SCREENS.HOME)}
         />
       )}
       {screen === SCREENS.GAMEPLAY && (
@@ -458,7 +429,6 @@ export default function MoneyOnTheLine() {
           result={roundResult}
           teamScore={getTeamScore(roundResult.team)}
           onNext={() => {
-            refreshGameData();
             setLeaderboardTab("players");
             setScreen(SCREENS.LEADERBOARD);
           }}
@@ -472,7 +442,7 @@ export default function MoneyOnTheLine() {
           getTeamScore={getTeamScore}
           tab={leaderboardTab}
           onTabChange={setLeaderboardTab}
-          onHome={() => { refreshGameData(); setScreen(SCREENS.HOME); }}
+          onHome={() => setScreen(SCREENS.HOME)}
         />
       )}
       {screen === SCREENS.ADMIN && (
@@ -498,6 +468,8 @@ function HomeScreen({ onStart, onLeaderboard, onAdmin, gameData, getTeamScore })
   
   const topPlayers = (gameData.playerLeaderboard || []).slice(0, 5);
   const [showTeams, setShowTeams] = useState(true);
+  const [showAdminInput, setShowAdminInput] = useState(false);
+  const [adminPw, setAdminPw] = useState("");
 
   return (
     <div style={{ width: "100%", maxWidth: 420, padding: "20px 16px", textAlign: "center" }}>
@@ -526,7 +498,7 @@ function HomeScreen({ onStart, onLeaderboard, onAdmin, gameData, getTeamScore })
           animation: "blink 1.2s step-end infinite",
         }}
       >
-        ▸ START
+        <PixelTriangle size={8} /> START
       </div>
       
       {/* Leaderboard section */}
@@ -588,7 +560,7 @@ function HomeScreen({ onStart, onLeaderboard, onAdmin, gameData, getTeamScore })
             onClick={() => onLeaderboard("teams")}
             style={{ fontSize: 9, textAlign: "center", marginTop: 8, cursor: "pointer", color: GB_MID }}
           >
-            ▸ VIEW ALL TEAMS
+            <PixelTriangle size={5} /> VIEW FULL LEADERBOARD
           </div>
         </div>
       ) : (
@@ -603,7 +575,7 @@ function HomeScreen({ onStart, onLeaderboard, onAdmin, gameData, getTeamScore })
               marginBottom: 10,
               fontSize: 12,
             }}>
-              <span>{i + 1}. {p.name}</span>
+              <span>{i + 1}. {p.name} ({p.team})</span>
               <span>{p.score}</span>
             </div>
           ))}
@@ -611,17 +583,54 @@ function HomeScreen({ onStart, onLeaderboard, onAdmin, gameData, getTeamScore })
             onClick={() => onLeaderboard("players")}
             style={{ fontSize: 9, textAlign: "center", marginTop: 8, cursor: "pointer", color: GB_MID }}
           >
-            ▸ VIEW ALL PLAYERS
+            <PixelTriangle size={5} /> VIEW FULL LEADERBOARD
           </div>
         </div>
       )}
       
       <div
-        onClick={onAdmin}
+        onClick={() => setShowAdminInput(true)}
         style={{ fontSize: 8, color: GB_MID, marginTop: 32, cursor: "pointer" }}
       >
         Admin
       </div>
+      {showAdminInput && (
+        <div style={{ marginTop: 8 }}>
+          <input
+            type="password"
+            placeholder="Password"
+            value={adminPw}
+            onChange={e => setAdminPw(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === "Enter" && adminPw === "GENEKEADY") onAdmin();
+            }}
+            style={{
+              fontFamily: pixelFont,
+              fontSize: 8,
+              background: GB_BG,
+              border: `2px solid ${GB_DARK}`,
+              padding: "4px 6px",
+              width: 100,
+              textAlign: "center",
+              color: GB_DARK,
+            }}
+            autoFocus
+          />
+          <button
+            onClick={() => { if (adminPw === "GENEKEADY") onAdmin(); }}
+            style={{
+              fontFamily: pixelFont,
+              fontSize: 8,
+              background: GB_DARK,
+              color: GB_BG,
+              border: "none",
+              padding: "5px 10px",
+              marginLeft: 4,
+              cursor: "pointer",
+            }}
+          >GO</button>
+        </div>
+      )}
     </div>
   );
 }
@@ -643,7 +652,7 @@ function TeamSelectScreen({ onSelect, onBack }) {
         SELECT YOUR TEAM
       </div>
       <div style={{ fontSize: 8, color: GB_MID, marginBottom: 16 }}>
-        Tap a ticker to mint 64 tokens & play
+        Play to win up to 64 tokens for your team
       </div>
       <div style={{
         display: "grid",
@@ -672,7 +681,7 @@ function TeamSelectScreen({ onSelect, onBack }) {
         onClick={onBack}
         style={{ fontSize: 10, marginTop: 20, cursor: "pointer" }}
       >
-        ▸ BACK
+        <PixelTriangle size={6} /> BACK
       </div>
     </div>
   );
@@ -977,7 +986,7 @@ function RoundResultScreen({ result, teamScore, onNext, qualifies, onLeaderboard
       <div style={{ fontSize: 16, fontWeight: "bold", marginBottom: 4 }}>{result.team}</div>
       <div style={{ fontSize: 20, fontWeight: "bold" }}>${teamScore.score.toLocaleString()}</div>
       <div style={{ fontSize: 7, color: GB_MID, marginBottom: 20 }}>
-        ${teamScore.tokens.toLocaleString()} tokens × {(teamScore.pct * 100).toFixed(1)}% FT
+        ${teamScore.tokens.toLocaleString()} team tokens × {(teamScore.pct * 100).toFixed(1)}% FT
       </div>
       
       {/* Leaderboard entry */}
@@ -1020,7 +1029,7 @@ function RoundResultScreen({ result, teamScore, onNext, qualifies, onLeaderboard
               padding: "8px 20px",
               cursor: isProfane(nameInput.trim()) ? "not-allowed" : "pointer",
             }}
-          >SET</button>
+          >ADD NAME</button>
         </div>
       )}
       
@@ -1034,7 +1043,7 @@ function RoundResultScreen({ result, teamScore, onNext, qualifies, onLeaderboard
         onClick={onNext}
         style={{ fontSize: 12, cursor: "pointer", marginTop: 8 }}
       >
-        ▸ LEADERBOARD
+        <PixelTriangle size={7} /> CONTINUE TO LEADERBOARD
       </div>
     </div>
   );
@@ -1117,7 +1126,7 @@ function LeaderboardScreen({ gameData, getTeamScore, tab, onTabChange, onHome })
               marginBottom: 10,
               fontSize: 11,
             }}>
-              <span>{i + 1}. {p.name}</span>
+              <span>{i + 1}. {p.name} ({p.team})</span>
               <span>{p.score}</span>
             </div>
           ))}
@@ -1128,7 +1137,7 @@ function LeaderboardScreen({ gameData, getTeamScore, tab, onTabChange, onHome })
         onClick={onHome}
         style={{ fontSize: 12, cursor: "pointer", marginTop: 20 }}
       >
-        ▸ HOME
+        <PixelTriangle size={7} /> RETURN HOME
       </div>
     </div>
   );
@@ -1216,7 +1225,7 @@ function AdminScreen({ gameData, onReset, onBack }) {
         onClick={onBack}
         style={{ fontSize: 10, marginTop: 24, cursor: "pointer" }}
       >
-        ▸ BACK
+        <PixelTriangle size={6} /> BACK
       </div>
     </div>
   );
