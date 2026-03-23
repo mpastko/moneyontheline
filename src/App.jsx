@@ -175,10 +175,14 @@ function BackboardSVG({ cursorX, cursorY, showCursor, shotLocation }) {
               fill={GB_DARK}
             >+1</text>
           ) : (
-            <>
-              <line x1="-10" y1="-10" x2="10" y2="10" stroke={GB_DARK} strokeWidth="3" />
-              <line x1="10" y1="-10" x2="-10" y2="10" stroke={GB_DARK} strokeWidth="3" />
-            </>
+            <g style={{ imageRendering: "pixelated" }}>
+              {/* 3x3 pixel X: corners + center */}
+              <rect x="-9" y="-9" width="6" height="6" fill={GB_DARK} />
+              <rect x="3"  y="-9" width="6" height="6" fill={GB_DARK} />
+              <rect x="-3" y="-3" width="6" height="6" fill={GB_DARK} />
+              <rect x="-9" y="3"  width="6" height="6" fill={GB_DARK} />
+              <rect x="3"  y="3"  width="6" height="6" fill={GB_DARK} />
+            </g>
           )}
         </g>
       )}
