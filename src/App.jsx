@@ -4,10 +4,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 // CONSTANTS
 // ============================================================
 const TEAMS = [
-  "$SLU","$MICH","$LOU","$MICHST","$TCU","$DUKE","$TEXAM","$HOU",
-  "$TEXAS","$GONZ","$VCU","$ILL","$VAN","$NEB","$HIGHP","$ARK",
-  "$MIA","$PUR","$KY","$IOWAST","$STJ","$KAN","$TENN","$VIRG",
-  "$IOWA","$FL","$UTAHST","$ARIZ","$UCLA","$CONN","$TTECH","$ALA"
+  "$MICH","$MICHST","$DUKE","$HOU","$TEXAS","$ILL",
+  "$NEB","$ARK","$PUR","$IOWAST","$STJ","$TENN",
+  "$IOWA","$ARIZ","$CONN","$ALA"
 ];
 
 const TOKENS_PER_MINT = 64;
