@@ -685,8 +685,8 @@ function GameplayScreen({ team, onComplete }) {
     centerX: 250,
     centerY: 115,
     // Semi-major and semi-minor axes (these shift over time)
-    radiusA: 90,  // horizontal radius
-    radiusB: 48,  // vertical radius
+    radiusA: 70,  // horizontal radius
+    radiusB: 35,  // vertical radius
     // Rotation of the ellipse itself
     tilt: 0,
     // Speed: radians per frame (~60fps)
@@ -720,13 +720,13 @@ function GameplayScreen({ team, onComplete }) {
       
       // Slowly drift the ellipse center around the backboard area
       o.driftAngle += o.driftSpeed;
-      o.centerX = 250 + Math.cos(o.driftAngle) * 40;
-      o.centerY = 115 + Math.sin(o.driftAngle * 0.7) * 28;
+      o.centerX = 250 + Math.cos(o.driftAngle) * 30;
+      o.centerY = 115 + Math.sin(o.driftAngle * 0.7) * 20;
       
       // Slowly shift the semi-axes so the ellipse "breathes"
       o.axisPhase += o.axisSpeed;
-      o.radiusA = 75 + Math.sin(o.axisPhase) * 35;          // 40..110
-      o.radiusB = 38 + Math.cos(o.axisPhase * 1.3) * 22;    // 16..60
+      o.radiusA = 55 + Math.sin(o.axisPhase) * 25;          // 30..80
+      o.radiusB = 28 + Math.cos(o.axisPhase * 1.3) * 15;    // 13..43
       
       // Slowly rotate the ellipse tilt
       o.tiltDrift += o.tiltDriftSpeed;
@@ -747,8 +747,8 @@ function GameplayScreen({ team, onComplete }) {
       let fy = o.centerY + ry;
       
       // Soft clamp to stay within the backboard area
-      fx = Math.max(80, Math.min(420, fx));
-      fy = Math.max(10, Math.min(190, fy));
+      fx = Math.max(140, Math.min(360, fx));
+      fy = Math.max(50, Math.min(170, fy));
       
       setCursorX(fx);
       setCursorY(fy);
@@ -816,13 +816,13 @@ function GameplayScreen({ team, onComplete }) {
       // Randomize orbit parameters so cursor pattern changes between shots
       const o = orbitRef.current;
       o.angle = Math.random() * Math.PI * 2;
-      o.speed = 0.035 + Math.random() * 0.0325; // 0.035..0.0675 (top speed reduced 10%)
+      o.speed = 0.035 + Math.random() * 0.03; // 0.035..0.065 (centered around reference 0.05)
       o.driftAngle = Math.random() * Math.PI * 2;
-      o.driftSpeed = 0.002 + Math.random() * 0.004; // vary drift speed
+      o.driftSpeed = 0.002 + Math.random() * 0.002; // vary around reference 0.003
       o.tiltDrift = Math.random() * Math.PI * 2;
-      o.tiltDriftSpeed = 0.003 + Math.random() * 0.006;
+      o.tiltDriftSpeed = 0.003 + Math.random() * 0.004; // vary around reference 0.005
       o.axisPhase = Math.random() * Math.PI * 2;
-      o.axisSpeed = 0.003 + Math.random() * 0.004;
+      o.axisSpeed = 0.003 + Math.random() * 0.002; // vary around reference 0.004
       
       setCanShoot(true);
     }, 1000);
