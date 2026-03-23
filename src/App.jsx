@@ -246,6 +246,7 @@ export default function MoneyOnTheLine() {
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [roundResult, setRoundResult] = useState(null); // { made, attempted, team }
   const [leaderboardTab, setLeaderboardTab] = useState("players"); // "players" | "teams"
+  const [expandPlayers, setExpandPlayers] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [fontLoaded, setFontLoaded] = useState(false);
 
@@ -379,7 +380,7 @@ export default function MoneyOnTheLine() {
       {screen === SCREENS.HOME && (
         <HomeScreen
           onStart={() => setScreen(SCREENS.TEAM_SELECT)}
-          onLeaderboard={(tab) => { setLeaderboardTab(tab); setScreen(SCREENS.LEADERBOARD); }}
+          onLeaderboard={(tab) => { setLeaderboardTab(tab); setExpandPlayers(true); setScreen(SCREENS.LEADERBOARD); }}
           onAdmin={() => setScreen(SCREENS.ADMIN)}
           gameData={gameData}
           getTeamScore={getTeamScore}
@@ -403,6 +404,7 @@ export default function MoneyOnTheLine() {
           teamScore={getTeamScore(roundResult.team)}
           onNext={() => {
             setLeaderboardTab("players");
+            setExpandPlayers(false);
             setScreen(SCREENS.LEADERBOARD);
           }}
           qualifies={qualifiesForLeaderboard(roundResult.made)}
@@ -416,6 +418,7 @@ export default function MoneyOnTheLine() {
           tab={leaderboardTab}
           onTabChange={setLeaderboardTab}
           onHome={() => setScreen(SCREENS.HOME)}
+          initialExpandPlayers={expandPlayers}
         />
       )}
       {screen === SCREENS.ADMIN && (
@@ -448,10 +451,9 @@ function HomeScreen({ onStart, onLeaderboard, onAdmin, gameData, getTeamScore })
     <div style={{ width: "100%", maxWidth: 420, padding: "20px 16px", textAlign: "center" }}>
       {/* Title */}
       <div style={{
-        background: GB_DARK,
-        color: GB_BG,
+        color: GB_DARK,
         padding: "10px 16px",
-        fontSize: "18px",
+        fontSize: "22px",
         letterSpacing: "1px",
         marginBottom: 16,
         textAlign: "center",
@@ -1058,8 +1060,8 @@ function RoundResultScreen({ result, teamScore, onNext, qualifies, onLeaderboard
 // ============================================================
 // LEADERBOARD SCREEN
 // ============================================================
-function LeaderboardScreen({ gameData, getTeamScore, tab, onTabChange, onHome }) {
-  const [showAllPlayers, setShowAllPlayers] = useState(false);
+function LeaderboardScreen({ gameData, getTeamScore, tab, onTabChange, onHome, initialExpandPlayers }) {
+  const [showAllPlayers, setShowAllPlayers] = useState(initialExpandPlayers);
   const teamScores = TEAMS.map(t => ({ team: t, ...getTeamScore(t) }))
     .filter(t => t.tokens > 0)
     .sort((a, b) => b.score - a.score);
