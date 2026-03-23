@@ -176,12 +176,10 @@ function BackboardSVG({ cursorX, cursorY, showCursor, shotLocation }) {
             >+1</text>
           ) : (
             <g style={{ imageRendering: "pixelated" }}>
-              {/* 3x3 pixel X: corners + center */}
-              <rect x="-9" y="-9" width="6" height="6" fill={GB_DARK} />
-              <rect x="3"  y="-9" width="6" height="6" fill={GB_DARK} />
-              <rect x="-3" y="-3" width="6" height="6" fill={GB_DARK} />
-              <rect x="-9" y="3"  width="6" height="6" fill={GB_DARK} />
-              <rect x="3"  y="3"  width="6" height="6" fill={GB_DARK} />
+              {/* 5x5 checkerboard X marker, 3px squares */}
+              {[[-2,-2],[-1,-1],[0,0],[1,1],[2,2],[-2,2],[-1,1],[1,-1],[2,-2]].map(([cx,cy], i) => (
+                <rect key={i} x={cx*3-1.5} y={cy*3-1.5} width="3" height="3" fill={GB_DARK} />
+              ))}
             </g>
           )}
         </g>
