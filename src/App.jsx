@@ -517,7 +517,7 @@ function HomeScreen({ onStart, onLeaderboard, onAdmin, gameData, getTeamScore })
               display: "flex",
               justifyContent: "space-between",
               alignItems: "flex-start",
-              marginBottom: 14,
+              marginBottom: 10,
               fontSize: 12,
             }}>
               <span style={{ fontWeight: "bold" }}>{i + 1}. {t.team}</span>
@@ -1059,9 +1059,13 @@ function RoundResultScreen({ result, teamScore, onNext, qualifies, onLeaderboard
 // LEADERBOARD SCREEN
 // ============================================================
 function LeaderboardScreen({ gameData, getTeamScore, tab, onTabChange, onHome }) {
+  const [showAllPlayers, setShowAllPlayers] = useState(false);
   const teamScores = TEAMS.map(t => ({ team: t, ...getTeamScore(t) }))
     .filter(t => t.tokens > 0)
     .sort((a, b) => b.score - a.score);
+
+  const allPlayers = gameData.playerLeaderboard;
+  const visiblePlayers = showAllPlayers ? allPlayers : allPlayers.slice(0, 20);
 
   return (
     <div style={{ width: "100%", maxWidth: 420, padding: "20px 16px", textAlign: "center" }}>
@@ -1107,7 +1111,7 @@ function LeaderboardScreen({ gameData, getTeamScore, tab, onTabChange, onHome })
               display: "flex",
               justifyContent: "space-between",
               alignItems: "flex-start",
-              marginBottom: 14,
+              marginBottom: 10,
               fontSize: 11,
             }}>
               <span style={{ fontWeight: "bold" }}>{i + 1}. {t.team}</span>
@@ -1122,10 +1126,10 @@ function LeaderboardScreen({ gameData, getTeamScore, tab, onTabChange, onHome })
         </div>
       ) : (
         <div style={{ textAlign: "left", padding: "0 8px" }}>
-          {gameData.playerLeaderboard.length === 0 && (
+          {allPlayers.length === 0 && (
             <div style={{ fontSize: 9, textAlign: "center", color: GB_MID }}>No players yet. Play a round!</div>
           )}
-          {gameData.playerLeaderboard.map((p, i) => (
+          {visiblePlayers.map((p, i) => (
             <div key={i} style={{
               display: "flex",
               justifyContent: "space-between",
@@ -1136,6 +1140,14 @@ function LeaderboardScreen({ gameData, getTeamScore, tab, onTabChange, onHome })
               <span>{p.score}</span>
             </div>
           ))}
+          {!showAllPlayers && allPlayers.length > 20 && (
+            <div
+              onClick={() => setShowAllPlayers(true)}
+              style={{ fontSize: 9, textAlign: "center", marginTop: 8, cursor: "pointer", color: GB_MID }}
+            >
+              <PixelTriangle size={5} /> VIEW FULL LEADERBOARD
+            </div>
+          )}
         </div>
       )}
       
