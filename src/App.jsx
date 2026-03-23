@@ -666,7 +666,7 @@ function GameplayScreen({ team, onComplete }) {
   const [made, setMade] = useState(0);
   const [attempted, setAttempted] = useState(0);
   const [cursorX, setCursorX] = useState(250);
-  const [cursorY, setCursorY] = useState(115);
+  const [cursorY, setCursorY] = useState(125);
   const [gameActive, setGameActive] = useState(true);
   const [shotLocation, setShotLocation] = useState(null); // { x, y, made }
   const [canShoot, setCanShoot] = useState(true);
@@ -683,7 +683,7 @@ function GameplayScreen({ team, onComplete }) {
     angle: Math.random() * Math.PI * 2,
     // Ellipse center orbits around the backboard center
     centerX: 250,
-    centerY: 115,
+    centerY: 125,
     // Semi-major and semi-minor axes (these shift over time)
     radiusA: 70,  // horizontal radius
     radiusB: 35,  // vertical radius
@@ -721,7 +721,7 @@ function GameplayScreen({ team, onComplete }) {
       // Slowly drift the ellipse center around the backboard area
       o.driftAngle += o.driftSpeed;
       o.centerX = 250 + Math.cos(o.driftAngle) * 30;
-      o.centerY = 115 + Math.sin(o.driftAngle * 0.7) * 20;
+      o.centerY = 125 + Math.sin(o.driftAngle * 0.7) * 20;
       
       // Slowly shift the semi-axes so the ellipse "breathes"
       o.axisPhase += o.axisSpeed;
@@ -748,7 +748,7 @@ function GameplayScreen({ team, onComplete }) {
       
       // Soft clamp to stay within the backboard area
       fx = Math.max(140, Math.min(360, fx));
-      fy = Math.max(50, Math.min(170, fy));
+      fy = Math.max(60, Math.min(180, fy));
       
       setCursorX(fx);
       setCursorY(fy);
